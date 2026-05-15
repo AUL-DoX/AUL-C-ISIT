@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AUL C-ISIT — ケアプロフィール</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  /* ========== BASE ========== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --blue:    #2563EB;
+    --blue-lt: #EFF6FF;
+    --blue-dk: #1D4ED8;
+    --teal:    #0D9488;
+    --teal-lt: #F0FDFA;
+    --gray-50: #F9FAFB;
+    --gray-100:#F3F4F6;
+    --gray-200:#E5E7EB;
+    --gray-400:#9CA3AF;
+    --gray-600:#4B5563;
+    --gray-700:#374151;
+    --gray-900:#111827;
+    --red:     #DC2626;
+    --radius:  8px;
+    --shadow:  0 1px 3px rgba(0,0,0,.10), 0 1px 2px rgba(0,0,0,.06);
+  }
+
+  html { font-size: 16px; }
+  body {
+    font-family: "Noto Sans JP", "Hiragino Sans", "Yu Gothic UI", sans-serif;
+    background: var(--gray-50);
+    color: var(--gray-900);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ========== BETA BADGE ========== */
+  #beta-badge {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    z-index: 1000;
+    background: #FEF3C7;
+    color: #92400E;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid #FCD34D;
+    pointer-events: none;
+  }
+
+  /* ========== HEADER ========== */
+  #app-header {
+    background: white;
+    border-bottom: 1px solid var(--gray-200);
+    padding: 16px 20px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow);
+  }
+  #app-header h1 {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--blue);
+    letter-spacing: -.5px;
+  }
+  #app-header p {
+    font-size: 12px;
+    color: var(--gray-600);
+    margin-top: 2px;
+  }
+
+  /* ========== MAIN WRAPPER ========== */
+  #app { max-width: 680px; margin: 0 auto; padding: 0 0 120px; }
+
+  /* ========== SCREENS ========== */
+  .screen { display: none; padding: 24px 16px; }
+  .screen.active { display: block; }
+
+  /* ========== TOP SCREEN ========== */
+  #top-screen { text-align: center; }
+  .top-logo {
+    margin: 32px auto 8px;
+    width: 72px; height: 72px;
+    background: var(--blue-lt);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px;
+  }
+  #top-screen h2 { font-size: 22px; font-weight: 800; color: var(--blue); margin-bottom: 8px; }
+  #top-screen .tagline { font-size: 14px; color: var(--gray-600); margin-bottom: 32px; }
+  .top-desc {
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+    padding: 16px;
+    text-align: left;
+    font-size: 14px;
+    color: var(--gray-700);
+    margin-bottom: 24px;
+    line-height: 1.7;
+  }
+  .top-desc li { margin-left: 16px; margin-top: 4px; }
+
+  /* ========== BUTTONS ========== */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 13px 20px;
+    border-radius: var(--radius);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: background .15s, transform .1s;
+    min-height: 48px;
+    text-decoration: none;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn-primary { background: var(--blue); color: white; width: 100%; margin-bottom: 12px; }
+  .btn-primary:hover { background: var(--blue-dk); }
+  .btn-secondary { background: white; color: var(--blue); border: 2px solid var(--blue); width: 100%; }
+  .btn-secondary:hover { background: var(--blue-lt); }
+  .btn-teal { background: var(--teal); color: white; }
+  .btn-teal:hover { background: #0F766E; }
+  .btn-danger { background: white; color: var(--red); border: 1px solid var(--red); }
+  .btn-sm { font-size: 13px; padding: 8px 14px; min-height: 36px; }
+  .btn-icon { font-size: 16px; }
+
+  /* ========== DATA-LOSS WARNING ========== */
+  .warning-box {
+    background: #FEF3C7;
+    border: 1px solid #FCD34D;
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    font-size: 12px;
+    color: #78350F;
+    margin-top: 16px;
+    line-height: 1.6;
+  }
+  .warning-box strong { display: block; margin-bottom: 4px; }
+
+  /* ========== PROGRESS TABS ========== */
+  #step-bar {
+    display: flex;
+    overflow-x: auto;
+    background: white;
+    border-bottom: 1px solid var(--gray-200);
+    padding: 0 4px;
+    position: sticky;
+    top: 57px;
+    z-index: 99;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+  #step-bar::-webkit-scrollbar { height: 3px; }
+  #step-bar::-webkit-scrollbar-thumb { background: var(--gray-200); border-radius: 2px; }
+  .step-tab {
+    flex: 0 0 auto;
+    padding: 10px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gray-400);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    scroll-snap-align: start;
+    transition: color .15s, border-color .15s;
+  }
+  .step-tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+  .step-tab.done { color: var(--teal); }
+
+  /* ========== SECTIONS ========== */
+  .section-panel { display: none; }
+  .section-panel.active { display: block; }
+  .section-panel h3 {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--gray-700);
+    margin: 20px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--blue-lt);
+  }
+
+  /* ========== FORM ELEMENTS ========== */
+  .field { margin-bottom: 16px; }
+  label { display: block; font-size: 13px; font-weight: 600; color: var(--gray-700); margin-bottom: 5px; }
+  label .opt { font-weight: 400; color: var(--gray-400); font-size: 11px; margin-left: 4px; }
+  input[type="text"],
+  input[type="tel"],
+  input[type="date"],
+  select,
+  textarea {
+    width: 100%;
+    padding: 11px 13px;
+    border: 1px solid var(--gray-200);
+    border-radius: 6px;
+    font-size: 15px;
+    font-family: inherit;
+    background: white;
+    color: var(--gray-900);
+    transition: border-color .15s, box-shadow .15s;
+    min-height: 44px;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239CA3AF' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+  }
+  textarea { resize: vertical; min-height: 80px; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 400px) { .field-row { grid-template-columns: 1fr; } }
+
+  /* Radio group */
+  .radio-group { display: flex; gap: 8px; flex-wrap: wrap; }
+  .radio-group label {
+    display: flex; align-items: center; gap: 6px;
+    font-weight: 400; font-size: 14px;
+    cursor: pointer; margin: 0;
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: 6px;
+    padding: 8px 12px;
+    transition: border-color .15s, background .15s;
+  }
+  .radio-group label:has(input:checked) {
+    border-color: var(--blue);
+    background: var(--blue-lt);
+    color: var(--blue);
+    font-weight: 700;
+  }
+  .radio-group input[type="radio"] { accent-color: var(--blue); }
+
+  /* ========== MULTI-ENTRY CARDS ========== */
+  .entry-card {
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 12px;
+    position: relative;
+  }
+  .entry-card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .entry-card-title { font-size: 13px; font-weight: 700; color: var(--gray-600); }
+  .btn-remove {
+    background: none; border: none; cursor: pointer;
+    color: var(--gray-400); font-size: 20px; line-height: 1;
+    padding: 2px 6px; border-radius: 4px;
+    transition: color .15s, background .15s;
+  }
+  .btn-remove:hover { color: var(--red); background: #FEF2F2; }
+  .add-entry-btn {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    width: 100%;
+    padding: 12px;
+    border: 2px dashed var(--gray-200);
+    border-radius: var(--radius);
+    background: white;
+    color: var(--blue);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+    min-height: 48px;
+  }
+  .add-entry-btn:hover { border-color: var(--blue); background: var(--blue-lt); }
+
+  /* Priority order (drag handles) */
+  .entry-card.sortable { cursor: grab; }
+  .drag-handle {
+    display: flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px;
+    color: var(--gray-400); font-size: 16px;
+    cursor: grab;
+    touch-action: none;
+  }
+  .order-btns { display: flex; gap: 4px; }
+  .btn-order {
+    background: var(--gray-100); border: 1px solid var(--gray-200);
+    border-radius: 4px; cursor: pointer;
+    font-size: 14px; width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .1s;
+  }
+  .btn-order:hover { background: var(--gray-200); }
+
+  /* ========== NAV BETWEEN SECTIONS ========== */
+  .section-nav {
+    display: flex; gap: 10px; margin-top: 24px; padding-top: 16px;
+    border-top: 1px solid var(--gray-200);
+  }
+  .section-nav .btn { flex: 1; }
+
+  /* ========== FOOTER TOOLBAR ========== */
+  #footer-toolbar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: white;
+    border-top: 1px solid var(--gray-200);
+    padding: 10px 16px;
+    display: flex; gap: 8px; justify-content: center;
+    z-index: 200;
+    box-shadow: 0 -2px 8px rgba(0,0,0,.06);
+  }
+  #footer-toolbar .btn { flex: 1; max-width: 180px; }
+  #footer-toolbar .btn-sm { font-size: 12px; }
+
+  /* ========== AUTOSAVE INDICATOR ========== */
+  #autosave-indicator {
+    position: fixed; bottom: 70px; right: 12px;
+    font-size: 11px; color: var(--teal);
+    background: var(--teal-lt);
+    padding: 4px 10px; border-radius: 12px;
+    border: 1px solid #99F6E4;
+    opacity: 0; transition: opacity .3s;
+    pointer-events: none; z-index: 300;
+  }
+  #autosave-indicator.show { opacity: 1; }
+
+  /* ========== PREVIEW SCREEN ========== */
+  #preview-screen { padding: 16px; }
+  #preview-screen h2 { font-size: 18px; font-weight: 800; margin-bottom: 16px; color: var(--gray-700); }
+
+  #preview-actions {
+    display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;
+  }
+  #preview-actions .btn { flex: 1; min-width: 140px; }
+
+  /* A4 Preview Card */
+  #pdf-preview {
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+    padding: 20px;
+    font-size: 11px;
+    line-height: 1.5;
+    color: #1a1a1a;
+    box-shadow: var(--shadow);
+  }
+  #pdf-preview .pdf-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    border-bottom: 2px solid #1a1a1a;
+    padding-bottom: 6px; margin-bottom: 10px;
+  }
+  #pdf-preview .pdf-title { font-size: 15px; font-weight: 900; color: var(--blue); }
+  #pdf-preview .pdf-date { font-size: 10px; color: var(--gray-600); }
+  .pdf-section { margin-bottom: 10px; }
+  .pdf-section-title {
+    font-size: 10px; font-weight: 900;
+    background: var(--gray-700); color: white;
+    padding: 3px 8px; margin-bottom: 5px;
+    border-radius: 3px;
+  }
+  .pdf-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px 12px; }
+  .pdf-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px 8px; }
+  .pdf-item { display: flex; flex-direction: column; }
+  .pdf-label { font-size: 9px; color: var(--gray-600); }
+  .pdf-value { font-size: 11px; font-weight: 600; }
+  .pdf-table { width: 100%; border-collapse: collapse; font-size: 10px; }
+  .pdf-table th {
+    background: var(--gray-100); padding: 3px 5px;
+    border: 1px solid var(--gray-200); font-weight: 700; font-size: 9px;
+  }
+  .pdf-table td { padding: 3px 5px; border: 1px solid var(--gray-200); vertical-align: top; }
+  .pdf-emergency { display: flex; flex-direction: column; gap: 4px; }
+  .pdf-emergency-item { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pdf-emergency-item span { font-size: 10px; }
+  .pdf-emergency-item .badge {
+    background: var(--blue); color: white;
+    border-radius: 10px; padding: 0 6px; font-size: 9px; font-weight: 700;
+  }
+  .pdf-empty { color: var(--gray-400); font-size: 10px; font-style: italic; }
+
+  /* ========== PRINT STYLES ========== */
+  @media print {
+    body { background: white; }
+    #beta-badge, #app-header, #step-bar, #footer-toolbar,
+    #autosave-indicator, #preview-actions, #preview-screen h2 { display: none !important; }
+    #preview-screen { padding: 0; }
+    #pdf-preview {
+      border: none; box-shadow: none; padding: 0;
+      font-size: 10.5px;
+      page-break-inside: avoid;
+    }
+    .pdf-section { page-break-inside: avoid; }
+  }
+
+  /* ========== TOAST ========== */
+  #toast {
+    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+    background: var(--gray-900); color: white;
+    padding: 10px 20px; border-radius: 20px;
+    font-size: 13px; z-index: 9999;
+    opacity: 0; transition: opacity .3s;
+    pointer-events: none; white-space: nowrap;
+  }
+  #toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div id="beta-badge">🔧 β版公開中</div>
+<div id="autosave-indicator">✓ 自動保存しました</div>
+<div id="toast"></div>
+
+<!-- ========== HEADER ========== -->
+<header id="app-header">
+  <h1>AUL C-ISIT</h1>
+  <p>ケアプロフィール — 在宅介護・障がい福祉サービス利用者のプロフィール管理</p>
+</header>
+
+<div id="app">
+
+  <!-- ========== TOP SCREEN ========== -->
+  <div id="top-screen" class="screen active">
+    <div class="top-logo">🏠</div>
+    <h2>C-ISIT</h2>
+    <p class="tagline">Care / Connect — It speaks for itself.</p>
+
+    <div class="top-desc">
+      <strong>このアプリでできること：</strong>
+      <ul>
+        <li>在宅介護・障がい福祉サービスの利用情報を1枚にまとめる</li>
+        <li>A4サイズのPDFとして出力し、担当者・病院に共有できる</li>
+        <li>データはこの端末内に保存されます（ログイン不要）</li>
+      </ul>
+    </div>
+
+    <button class="btn btn-primary" onclick="startNew()">＋ プロフィールを作成する</button>
+    <button class="btn btn-secondary" id="load-btn" onclick="loadFromStorage()" style="display:none">
+      📂 保存データを読み込む
+    </button>
+    <a id="top-feedback-btn" href="#" target="_blank" rel="noopener" class="btn btn-secondary" style="margin-top:4px">
+      💬 ご意見・ご要望はこちら
+    </a>
+
+    <div class="warning-box">
+      <strong>⚠️ データはこの端末内に保存されます</strong>
+      定期的に「データを保存（CSV）」でバックアップしてください。<br>
+      ブラウザの履歴・キャッシュを削除した場合は、CSVから復元できます。
+    </div>
+  </div>
+
+  <!-- ========== FORM SCREEN ========== -->
+  <div id="form-screen" class="screen">
+
+    <!-- Step tabs -->
+    <div id="step-bar">
+      <div class="step-tab active" onclick="goToSection(0)" data-sec="0">基本情報</div>
+      <div class="step-tab" onclick="goToSection(1)" data-sec="1">障がい情報</div>
+      <div class="step-tab" onclick="goToSection(2)" data-sec="2">健康情報</div>
+      <div class="step-tab" onclick="goToSection(3)" data-sec="3">介護保険</div>
+      <div class="step-tab" onclick="goToSection(4)" data-sec="4">障がい福祉</div>
+      <div class="step-tab" onclick="goToSection(5)" data-sec="5">通院先</div>
+      <div class="step-tab" onclick="goToSection(6)" data-sec="6">ケアマネ</div>
+      <div class="step-tab" onclick="goToSection(7)" data-sec="7">緊急連絡先</div>
+    </div>
+
+    <!-- S1: 基本情報 -->
+    <div class="section-panel active" id="sec-0">
+      <h3>セクション 1　利用者基本情報</h3>
+      <div class="field-row">
+        <div class="field">
+          <label>氏名</label>
+          <input type="text" id="name" placeholder="山田 太郎" oninput="autosave()">
+        </div>
+        <div class="field">
+          <label>フリガナ</label>
+          <input type="text" id="name_kana" placeholder="ヤマダ タロウ" oninput="autosave()">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>生年月日</label>
+          <input type="date" id="birthdate" oninput="autosave()">
+        </div>
+        <div class="field">
+          <label>性別</label>
+          <select id="gender" onchange="autosave()">
+            <option value="">選択</option>
+            <option>男性</option>
+            <option>女性</option>
+            <option>その他</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>住所</label>
+        <input type="text" id="address" placeholder="札幌市中央区…" oninput="autosave()">
+      </div>
+      <div class="field">
+        <label>要介護度</label>
+        <select id="care_level" onchange="autosave()">
+          <option value="">選択</option>
+          <option>なし</option>
+          <option>要支援1</option>
+          <option>要支援2</option>
+          <option>要介護1</option>
+          <option>要介護2</option>
+          <option>要介護3</option>
+          <option>要介護4</option>
+          <option>要介護5</option>
+        </select>
+      </div>
+      <div class="section-nav">
+        <button class="btn btn-secondary" onclick="goTop()">🏠 トップ</button>
+        <button class="btn btn-primary" onclick="goToSection(1)">次へ：障がい情報 →</button>
+      </div>
+    </div>
+
+    <!-- S2: 障がい情報 -->
+    <div class="section-panel" id="sec-1">
+      <h3>セクション 2　障がい情報 <span style="font-size:12px;font-weight:400;color:var(--gray-400)">（任意・複数該当あり）</span></h3>
+      <div class="field">
+        <label>障がい支援区分</label>
+        <select id="disability_level" onchange="autosave()">
+          <option value="">選択</option>
+          <option>なし</option>
+          <option>区分1</option><option>区分2</option><option>区分3</option>
+          <option>区分4</option><option>区分5</option><option>区分6</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>難病 <span class="opt">任意</span></label>
+        <input type="text" id="rare_disease" placeholder="病名を入力" oninput="autosave()">
+      </div>
+      <div class="field">
+        <label>精神障害者保健福祉手帳</label>
+        <select id="mental_cert" onchange="autosave()">
+          <option value="">選択</option>
+          <option>なし</option>
+          <option>1級</option><option>2級</option><option>3級</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>身体障害者手帳</label>
+        <select id="physical_cert" onchange="autosave()">
+          <option value="">選択</option>
+          <option>なし</option>
+          <option>1級</option><option>2級</option><option>3級</option>
+          <option>4級</option><option>5級</option><option>6級</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>重症心身障害 <span class="opt">大島分類番号</span></label>
+        <input type="text" id="severe_disability" placeholder="例：1、2" oninput="autosave()">
+      </div>
+      <div class="section-nav">
+        <button class="btn btn-secondary" onclick="goTop()">🏠</button>
+        <button class="btn btn-secondary" onclick="goToSection(0)">← 前へ</button>
+        <button class="btn btn-primary" onclick="goToSection(2)">次へ：健康情報 →</button>
+      </div>
+    </div>
+
+    <!-- S3: 健康情報 -->
+    <div class="section-panel" id="sec-2">
+      <h3>セクション 3　健康情報 <span style="font-size:12px;font-weight:400;color:var(--gray-400)">（任意）</span></h3>
+      <div class="field">
+        <label>既往歴</label>
+        <textarea id="medical_history" rows="3" placeholder="例：脳梗塞（2018年）、高血圧" oninput="autosave()"></textarea>
+      </div>
+      <div class="field">
+        <label>アレルギー</label>
+        <textarea id="allergies" rows="2" placeholder="例：卵、ペニシリン" oninput="autosave()"></textarea>
+      </div>
+      <div class="field">
+        <label>服薬中の薬</label>
+        <textarea id="medications" rows="3" placeholder="例：バイアスピリン 100mg（毎朝）" oninput="autosave()"></textarea>
+      </div>
+      <div class="field">
+        <label>かかりつけ医</label>
+        <input type="text" id="family_doctor" placeholder="例：山田医院 山田先生" oninput="autosave()">
+      </div>
+      <div class="section-nav">
+        <button class="btn btn-secondary" onclick="goTop()">🏠</button>
+        <button class="btn btn-secondary" onclick="goToSection(1)">← 前へ</button>
+        <button class="btn btn-primary" onclick="goToSection(3)">次へ：介護保険 →</button>
+      </div>
+    </div>
+
+    <!-- S4: 介護保険サービス -->
+    <div class="section-panel" id="sec-3">
+      <h3>セクション 4　介護保険サービス</h3>
+      <div id="care-insurance-list"></div>
+      <button class="add-entry-btn" onclick="addEntry('care_insurance')">＋ サービスを追加</button>
+      <div class="section-nav">
+        <button class="btn btn-secondary" onclick="goTop()">🏠</button>
+        <button class="btn btn-secondary" onclick="goToSection(2)">← 前へ</button>
+        <button class="btn btn-primary" onclick="goToSection(4)">次へ：障がい福祉 →</button>
+      </div>
+    </div>
+
+    <!-- S5: 障がい福祉サービス -->
+    <div class="section-panel" id="sec-4">
+      <h3>セクション 5　障がい福祉サービス</h3>
+      <div id="disability-welfare-list"></div>
+      <button class="add-entry-btn" onclick="addEntry('disability_welfare')">＋ サービスを追加</button>
+      <div class="section-nav">
+        <button class="btn btn-secondary" onclick="goTop()">🏠</button>
+        <button class="btn btn-secondary" onclick="goToSection(3)">← 前へ</button>
+        <button class="btn btn-primary" onclick="goToSection(5)">次へ：通院先 →</button>
+      </div>
+    </div>
+
+    <!-- S6: 通院先 -->
+    <div class="section-panel" id="sec-5">
+      <h3>セクション 6　通院先</h3>
+      <div id="hospital-list"></div>
+      <button class="add-entry-btn" onclick="addEntry('hospital')">＋ 通院先を追加</button>
+      <div class="section-nav">
+        <button class="btn btn-secondary" onclick="goTop()">🏠</button>
+        <button class="btn btn-secondary" onclick="goToSection(4)">← 前へ</button>
+        <button class="btn btn-primary" onclick="goToSection(6)">次へ：ケアマネ →</button>
+      </div>
+    </div>
+
+    <!-- S7: ケアマネ -->
+    <div class="section-panel" id="sec-6">
+      <h3>セクション 7　担当ケアマネ</h3>
+      <div class="field">
+        <label>氏名</label>
+        <input type="text" id="cm_name" placeholder="担当者の氏名" oninput="autosave()">
+      </div>
+      <div class="field">
+        <label>所属事業所名</label>
+        <input type="text" id="cm_office" placeholder="例：○○居宅介護支援事業所" oninput="autosave()">
+      </div>
+      <div class="field">
+        <label>電話番号</label>
+        <input type="tel" id="cm_tel" placeholder="011-000-0000" oninput="autosave()">
+      </div>
+      <div class="section-nav">
+        <button class="btn btn-secondary" onclick="goTop()">🏠</button>
+        <button class="btn btn-secondary" onclick="goToSection(5)">← 前へ</button>
+        <button class="btn btn-primary" onclick="goToSection(7)">次へ：緊急連絡先 →</button>
+      </div>
+    </div>
+
+    <!-- S8: 緊急連絡先 -->
+    <div class="section-panel" id="sec-7">
+      <h3>セクション 8　緊急連絡先 <span style="font-size:12px;font-weight:400;color:var(--gray-400)">（優先順位あり）</span></h3>
+      <div id="emergency-list"></div>
+      <button class="add-entry-btn" onclick="addEntry('emergency')">＋ 連絡先を追加</button>
+      <div class="section-nav">
+        <button class="btn btn-secondary" onclick="goTop()">🏠</button>
+        <button class="btn btn-secondary" onclick="goToSection(6)">← 前へ</button>
+        <button class="btn btn-teal btn-primary" onclick="showPreview()">✓ プレビューを確認する</button>
+      </div>
+    </div>
+
+  </div><!-- /form-screen -->
+
+  <!-- ========== PREVIEW SCREEN ========== -->
+  <div id="preview-screen" class="screen">
+    <h2>📄 プレビュー</h2>
+    <div id="preview-actions">
+      <button class="btn btn-secondary" onclick="goTop()">🏠 トップ</button>
+      <button class="btn btn-secondary" onclick="showForm()">✏️ 編集に戻る</button>
+      <button class="btn btn-primary" onclick="printPDF()">💾 PDFファイルを保存</button>
+    </div>
+    <div id="pdf-preview"></div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- ========== FEEDBACK FOOTER ========== -->
+<div id="feedback-footer" style="text-align:center;padding:12px 16px 0;font-size:12px;color:var(--gray-600);display:none">
+  ご意見・機能のご要望は<a id="feedback-link" href="#" target="_blank" rel="noopener" style="color:var(--blue);font-weight:700">こちら</a>へ
+  &nbsp;／&nbsp;※このツールはβ版です。いただいたご意見をもとに改善を続けています。
+</div>
+
+<!-- ========== FOOTER TOOLBAR ========== -->
+<div id="footer-toolbar">
+  <button class="btn btn-secondary btn-sm" onclick="importCSVClick()">
+    <span class="btn-icon">📥</span> 読み込む（CSV）
+  </button>
+  <input type="file" id="csv-file-input" accept=".csv" style="display:none" onchange="importCSV(event)">
+  <button class="btn btn-secondary btn-sm" onclick="exportCSV()">
+    <span class="btn-icon">📤</span> 保存（CSV）
+  </button>
+  <button class="btn btn-teal btn-sm" onclick="printPDF()">
+    <span class="btn-icon">💾</span> PDF保存
+  </button>
+</div>
+
+<!-- ========== SCRIPT ========== -->
+<script>
+// ========== CONFIG ==========
+const STORAGE_KEY = 'careProfile_v1';
+const CSV_FILENAME = 'care-profile.csv';
+const FEEDBACK_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSder_1jL2Rb-XsTAI7TY0KTSbL2JbMUUjxMHy474XVrcHcJwA/viewform?usp=header';
+
+// ========== STATE ==========
+let formData = {
+  name:'', name_kana:'', birthdate:'', gender:'', address:'', care_level:'',
+  disability_level:'', rare_disease:'', mental_cert:'', physical_cert:'', severe_disability:'',
+  medical_history:'', allergies:'', medications:'', family_doctor:'',
+  cm_name:'', cm_office:'', cm_tel:'',
+  care_insurance:[], disability_welfare:[], hospital:[], emergency:[]
+};
+let currentSection = 0;
+let autosaveTimer = null;
+
+// ========== INIT ==========
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    document.getElementById('load-btn').style.display = 'block';
+  }
+  document.getElementById('feedback-link').href = FEEDBACK_FORM_URL;
+  document.getElementById('top-feedback-btn').href = FEEDBACK_FORM_URL;
+  updateFooter();
+});
+
+function updateFooter() {
+  const isTop = document.getElementById('top-screen').classList.contains('active');
+  document.getElementById('footer-toolbar').style.display = isTop ? 'none' : 'flex';
+  document.getElementById('feedback-footer').style.display = 'block';
+}
+
+// ========== NAVIGATION ==========
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+  updateFooter();
+}
+
+function startNew() {
+  formData = resetFormData();
+  renderAllSections();
+  goToSection(0);
+  showScreen('form-screen');
+}
+
+function loadFromStorage() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (!saved) { showToast('保存データが見つかりません'); return; }
+  formData = Object.assign(resetFormData(), JSON.parse(saved));
+  renderAllSections();
+  goToSection(0);
+  showScreen('form-screen');
+  showToast('データを読み込みました');
+}
+
+function showPreview() {
+  collectFormData();
+  renderPreview();
+  showScreen('preview-screen');
+}
+
+function showForm() {
+  showScreen('form-screen');
+  updateFooter();
+}
+
+function goTop() {
+  collectFormData();
+  showScreen('top-screen');
+}
+
+function goToSection(index) {
+  // collect current before switching
+  collectSimpleFields();
+  currentSection = index;
+  document.querySelectorAll('.section-panel').forEach((p, i) => {
+    p.classList.toggle('active', i === index);
+  });
+  document.querySelectorAll('.step-tab').forEach((t, i) => {
+    t.classList.toggle('active', i === index);
+  });
+  // Scroll step-bar to active tab
+  const activeTab = document.querySelector('.step-tab.active');
+  if (activeTab) activeTab.scrollIntoView({ behavior:'smooth', inline:'center', block:'nearest' });
+  window.scrollTo(0,0);
+}
+
+// ========== FORM DATA ==========
+function resetFormData() {
+  return {
+    name:'', name_kana:'', birthdate:'', gender:'', address:'', care_level:'',
+    disability_level:'', rare_disease:'', mental_cert:'', physical_cert:'', severe_disability:'',
+    medical_history:'', allergies:'', medications:'', family_doctor:'',
+    cm_name:'', cm_office:'', cm_tel:'',
+    care_insurance:[], disability_welfare:[], hospital:[], emergency:[]
+  };
+}
+
+const SIMPLE_FIELDS = [
+  'name','name_kana','birthdate','gender','address','care_level',
+  'disability_level','rare_disease','mental_cert','physical_cert','severe_disability',
+  'medical_history','allergies','medications','family_doctor',
+  'cm_name','cm_office','cm_tel'
+];
+
+function collectSimpleFields() {
+  SIMPLE_FIELDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) formData[id] = el.value;
+  });
+}
+
+function collectFormData() {
+  collectSimpleFields();
+  // Multi-entry sections collected on change
+}
+
+function fillSimpleFields() {
+  SIMPLE_FIELDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = formData[id] || '';
+  });
+}
+
+function renderAllSections() {
+  fillSimpleFields();
+  renderList('care_insurance');
+  renderList('disability_welfare');
+  renderList('hospital');
+  renderList('emergency');
+}
+
+// ========== MULTI-ENTRY SECTIONS ==========
+const ENTRY_CONFIG = {
+  care_insurance: {
+    container: 'care-insurance-list',
+    label: '介護保険サービス',
+    fields: [
+      { id:'service_type', label:'サービス種別', type:'select',
+        options:['訪問介護','訪問看護','デイサービス','ショートステイ','福祉用具','その他'] },
+      { id:'office_name', label:'事業所名', type:'text' },
+      { id:'contact_name', label:'担当者名', type:'text' },
+      { id:'tel', label:'電話番号', type:'tel' },
+      { id:'schedule', label:'利用曜日・時間', type:'text', placeholder:'例：月・水・金 9:00-12:00' }
+    ]
+  },
+  disability_welfare: {
+    container: 'disability-welfare-list',
+    label: '障がい福祉サービス',
+    fields: [
+      { id:'service_type', label:'サービス種別', type:'select',
+        options:['居宅介護','重度訪問介護','就労継続支援A型','就労継続支援B型','生活介護','グループホーム','その他'] },
+      { id:'office_name', label:'事業所名', type:'text' },
+      { id:'contact_name', label:'担当者名', type:'text' },
+      { id:'tel', label:'電話番号', type:'tel' },
+      { id:'schedule', label:'利用曜日・時間', type:'text', placeholder:'例：平日 10:00-16:00' }
+    ]
+  },
+  hospital: {
+    container: 'hospital-list',
+    label: '通院先',
+    fields: [
+      { id:'hospital_name', label:'病院名', type:'text' },
+      { id:'department', label:'診療科', type:'text' },
+      { id:'doctor_name', label:'主治医名', type:'text' },
+      { id:'tel', label:'電話番号', type:'tel' },
+      { id:'next_visit', label:'次回受診日', type:'date' }
+    ]
+  },
+  emergency: {
+    container: 'emergency-list',
+    label: '緊急連絡先',
+    fields: [
+      { id:'relationship', label:'続柄', type:'text', placeholder:'例：長女、妻' },
+      { id:'contact_name', label:'氏名', type:'text' },
+      { id:'tel', label:'電話番号', type:'tel' }
+    ],
+    sortable: true
+  }
+};
+
+function renderList(type) {
+  const config = ENTRY_CONFIG[type];
+  const container = document.getElementById(config.container);
+  container.innerHTML = '';
+  (formData[type] || []).forEach((entry, index) => {
+    container.appendChild(createEntryCard(type, entry, index));
+  });
+}
+
+function createEntryCard(type, entry, index) {
+  const config = ENTRY_CONFIG[type];
+  const card = document.createElement('div');
+  card.className = 'entry-card';
+  card.dataset.type = type;
+  card.dataset.index = index;
+
+  let headerContent = '';
+  if (config.sortable) {
+    headerContent = `
+      <span class="entry-card-title">${config.label} ${index + 1}</span>
+      <div style="display:flex;gap:4px;align-items:center">
+        <div class="order-btns">
+          <button class="btn-order" onclick="moveEntry('${type}',${index},-1)" title="上へ">↑</button>
+          <button class="btn-order" onclick="moveEntry('${type}',${index},1)" title="下へ">↓</button>
+        </div>
+        <button class="btn-remove" onclick="removeEntry('${type}',${index})" title="削除">×</button>
+      </div>`;
+  } else {
+    headerContent = `
+      <span class="entry-card-title">${config.label} ${index + 1}</span>
+      <button class="btn-remove" onclick="removeEntry('${type}',${index})" title="削除">×</button>`;
+  }
+
+  card.innerHTML = `<div class="entry-card-header">${headerContent}</div>`;
+
+  config.fields.forEach(field => {
+    const fieldDiv = document.createElement('div');
+    fieldDiv.className = 'field';
+    const uid = `${type}_${index}_${field.id}`;
+    let input = '';
+    if (field.type === 'select') {
+      const opts = field.options.map(o =>
+        `<option ${entry[field.id]===o?'selected':''}>${o}</option>`
+      ).join('');
+      input = `<select id="${uid}" onchange="updateEntry('${type}',${index},'${field.id}',this.value)">
+                 <option value="">選択</option>${opts}</select>`;
+    } else {
+      const ph = field.placeholder || '';
+      input = `<input type="${field.type}" id="${uid}" value="${escHtml(entry[field.id]||'')}"
+                  placeholder="${ph}"
+                  oninput="updateEntry('${type}',${index},'${field.id}',this.value)">`;
+    }
+    fieldDiv.innerHTML = `<label>${field.label}</label>${input}`;
+    card.appendChild(fieldDiv);
+  });
+
+  return card;
+}
+
+function addEntry(type) {
+  const empty = {};
+  ENTRY_CONFIG[type].fields.forEach(f => empty[f.id] = '');
+  formData[type].push(empty);
+  renderList(type);
+  autosave();
+}
+
+function removeEntry(type, index) {
+  formData[type].splice(index, 1);
+  renderList(type);
+  autosave();
+}
+
+function updateEntry(type, index, field, value) {
+  formData[type][index][field] = value;
+  autosave();
+}
+
+function moveEntry(type, index, dir) {
+  const arr = formData[type];
+  const newIndex = index + dir;
+  if (newIndex < 0 || newIndex >= arr.length) return;
+  [arr[index], arr[newIndex]] = [arr[newIndex], arr[index]];
+  renderList(type);
+  autosave();
+}
+
+// ========== AUTOSAVE ==========
+function autosave() {
+  collectSimpleFields();
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
+    const indicator = document.getElementById('autosave-indicator');
+    indicator.classList.add('show');
+    setTimeout(() => indicator.classList.remove('show'), 1800);
+  }, 600);
+}
+
+// ========== CSV EXPORT / IMPORT ==========
+function exportCSV() {
+  collectFormData();
+  const json = JSON.stringify(formData, null, 2);
+  // Simple single-cell CSV wrapping JSON (practical for restore)
+  const csv = `"data"\n"${json.replace(/"/g, '""')}"`;
+  const blob = new Blob(['﻿' + csv], { type:'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = CSV_FILENAME; a.click();
+  URL.revokeObjectURL(url);
+  showToast('CSVを保存しました');
+}
+
+function importCSVClick() {
+  document.getElementById('csv-file-input').click();
+}
+
+function importCSV(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      // Parse the single-cell CSV: strip BOM, split lines, get second line, unquote
+      let text = e.target.result.replace(/^﻿/, '');
+      const lines = text.split('\n');
+      if (lines.length < 2) throw new Error('invalid');
+      let jsonStr = lines.slice(1).join('\n').trim();
+      // Remove surrounding quotes and unescape
+      if (jsonStr.startsWith('"') && jsonStr.endsWith('"')) {
+        jsonStr = jsonStr.slice(1,-1).replace(/""/g, '"');
+      }
+      const parsed = JSON.parse(jsonStr);
+      formData = Object.assign(resetFormData(), parsed);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
+      renderAllSections();
+      showToast('データを読み込みました');
+    } catch(err) {
+      showToast('CSVの読み込みに失敗しました');
+    }
+  };
+  reader.readAsText(file, 'utf-8');
+  event.target.value = '';
+}
+
+// ========== PDF PREVIEW ==========
+function renderPreview() {
+  const d = formData;
+  const today = new Date().toLocaleDateString('ja-JP', {year:'numeric', month:'2-digit', day:'2-digit'});
+  const age = d.birthdate ? calcAge(d.birthdate) : '';
+
+  // Care insurance rows
+  const ciRows = (d.care_insurance||[]).map(s =>
+    `<tr>
+      <td>${e(s.service_type)}</td>
+      <td>${e(s.office_name)}</td>
+      <td>${e(s.contact_name)}</td>
+      <td>${e(s.tel)}</td>
+      <td>${e(s.schedule)}</td>
+    </tr>`
+  ).join('') || `<tr><td colspan="5" class="pdf-empty">なし</td></tr>`;
+
+  // Disability welfare rows
+  const dwRows = (d.disability_welfare||[]).map(s =>
+    `<tr>
+      <td>${e(s.service_type)}</td>
+      <td>${e(s.office_name)}</td>
+      <td>${e(s.contact_name)}</td>
+      <td>${e(s.tel)}</td>
+      <td>${e(s.schedule)}</td>
+    </tr>`
+  ).join('') || `<tr><td colspan="5" class="pdf-empty">なし</td></tr>`;
+
+  // Hospital rows
+  const hoRows = (d.hospital||[]).map(h =>
+    `<tr>
+      <td>${e(h.hospital_name)}</td>
+      <td>${e(h.department)}</td>
+      <td>${e(h.doctor_name)}</td>
+      <td>${e(h.tel)}</td>
+      <td>${e(h.next_visit)}</td>
+    </tr>`
+  ).join('') || `<tr><td colspan="5" class="pdf-empty">なし</td></tr>`;
+
+  // Emergency contacts
+  const emHtml = (d.emergency||[]).length === 0
+    ? '<span class="pdf-empty">なし</span>'
+    : (d.emergency||[]).map((em, i) =>
+        `<div class="pdf-emergency-item">
+          <span class="badge">${i+1}</span>
+          <span>${e(em.relationship)} ${e(em.contact_name)}</span>
+          <span>📞 ${e(em.tel)}</span>
+        </div>`
+      ).join('');
+
+  const birthdateStr = d.birthdate
+    ? new Date(d.birthdate).toLocaleDateString('ja-JP') + (age ? `（${age}歳）` : '')
+    : '';
+
+  document.getElementById('pdf-preview').innerHTML = `
+    <div class="pdf-header">
+      <div>
+        <div class="pdf-title">ケアプロフィール</div>
+        <div style="font-size:12px;font-weight:700;margin-top:2px">${e(d.name)}　${e(d.name_kana)}</div>
+      </div>
+      <div class="pdf-date">出力日：${today}</div>
+    </div>
+
+    <div class="pdf-section">
+      <div class="pdf-section-title">【基本情報】</div>
+      <div class="pdf-grid">
+        <div class="pdf-item"><span class="pdf-label">氏名</span><span class="pdf-value">${e(d.name)} ${e(d.name_kana)}</span></div>
+        <div class="pdf-item"><span class="pdf-label">生年月日</span><span class="pdf-value">${birthdateStr}</span></div>
+        <div class="pdf-item"><span class="pdf-label">性別</span><span class="pdf-value">${e(d.gender)}</span></div>
+        <div class="pdf-item"><span class="pdf-label">要介護度</span><span class="pdf-value">${e(d.care_level)}</span></div>
+        <div class="pdf-item" style="grid-column:span 2"><span class="pdf-label">住所</span><span class="pdf-value">${e(d.address)}</span></div>
+      </div>
+    </div>
+
+    <div class="pdf-section">
+      <div class="pdf-section-title">【障がい情報】</div>
+      <div class="pdf-grid-3">
+        <div class="pdf-item"><span class="pdf-label">支援区分</span><span class="pdf-value">${e(d.disability_level)}</span></div>
+        <div class="pdf-item"><span class="pdf-label">精神手帳</span><span class="pdf-value">${e(d.mental_cert)}</span></div>
+        <div class="pdf-item"><span class="pdf-label">身体手帳</span><span class="pdf-value">${e(d.physical_cert)}</span></div>
+        <div class="pdf-item"><span class="pdf-label">難病</span><span class="pdf-value">${e(d.rare_disease)||'—'}</span></div>
+        <div class="pdf-item"><span class="pdf-label">重症心身障害（大島分類）</span><span class="pdf-value">${e(d.severe_disability)||'—'}</span></div>
+      </div>
+    </div>
+
+    <div class="pdf-section">
+      <div class="pdf-section-title">【健康情報】</div>
+      <div class="pdf-grid">
+        <div class="pdf-item"><span class="pdf-label">既往歴</span><span class="pdf-value">${nl2br(d.medical_history)}</span></div>
+        <div class="pdf-item"><span class="pdf-label">アレルギー</span><span class="pdf-value">${nl2br(d.allergies)}</span></div>
+        <div class="pdf-item" style="grid-column:span 2"><span class="pdf-label">服薬中の薬</span><span class="pdf-value">${nl2br(d.medications)}</span></div>
+        <div class="pdf-item"><span class="pdf-label">かかりつけ医</span><span class="pdf-value">${e(d.family_doctor)}</span></div>
+      </div>
+    </div>
+
+    <div class="pdf-section">
+      <div class="pdf-section-title">【介護保険サービス】</div>
+      <table class="pdf-table">
+        <tr><th>種別</th><th>事業所</th><th>担当者</th><th>電話番号</th><th>曜日・時間</th></tr>
+        ${ciRows}
+      </table>
+    </div>
+
+    <div class="pdf-section">
+      <div class="pdf-section-title">【障がい福祉サービス】</div>
+      <table class="pdf-table">
+        <tr><th>種別</th><th>事業所</th><th>担当者</th><th>電話番号</th><th>曜日・時間</th></tr>
+        ${dwRows}
+      </table>
+    </div>
+
+    <div class="pdf-section">
+      <div class="pdf-section-title">【通院先】</div>
+      <table class="pdf-table">
+        <tr><th>病院名</th><th>診療科</th><th>主治医</th><th>電話番号</th><th>次回受診日</th></tr>
+        ${hoRows}
+      </table>
+    </div>
+
+    <div class="pdf-section">
+      <div class="pdf-section-title">【担当ケアマネ】</div>
+      <div class="pdf-grid">
+        <div class="pdf-item"><span class="pdf-label">氏名</span><span class="pdf-value">${e(d.cm_name)}</span></div>
+        <div class="pdf-item"><span class="pdf-label">所属事業所</span><span class="pdf-value">${e(d.cm_office)}</span></div>
+        <div class="pdf-item"><span class="pdf-label">電話番号</span><span class="pdf-value">${e(d.cm_tel)}</span></div>
+      </div>
+    </div>
+
+    <div class="pdf-section">
+      <div class="pdf-section-title">【緊急連絡先】</div>
+      <div class="pdf-emergency">${emHtml}</div>
+    </div>
+
+    <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--gray-200);font-size:9px;color:var(--gray-400);text-align:center">
+      AUL C-ISIT β版 — aul-dox.jp
+    </div>
+  `;
+}
+
+async function printPDF() {
+  if (!document.getElementById('preview-screen').classList.contains('active')) {
+    collectFormData();
+    renderPreview();
+    showScreen('preview-screen');
+    await new Promise(r => setTimeout(r, 400));
+  }
+  await exportPDF();
+}
+
+async function exportPDF() {
+  const el = document.getElementById('pdf-preview');
+  showToast('PDFを生成中…');
+  try {
+    const canvas = await html2canvas(el, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff'
+    });
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const imgW = pageW;
+    const imgH = (canvas.height * imgW) / canvas.width;
+    const imgData = canvas.toDataURL('image/png');
+
+    if (imgH <= pageH) {
+      pdf.addImage(imgData, 'PNG', 0, 0, imgW, imgH);
+    } else {
+      // 複数ページに分割
+      let y = 0;
+      while (y < imgH) {
+        const sliceH = Math.min(pageH, imgH - y);
+        const sliceCanvas = document.createElement('canvas');
+        const ratio = canvas.width / imgW;
+        sliceCanvas.width = canvas.width;
+        sliceCanvas.height = sliceH * ratio;
+        const ctx = sliceCanvas.getContext('2d');
+        ctx.drawImage(canvas, 0, y * ratio, canvas.width, sliceH * ratio, 0, 0, canvas.width, sliceH * ratio);
+        if (y > 0) pdf.addPage();
+        pdf.addImage(sliceCanvas.toDataURL('image/png'), 'PNG', 0, 0, imgW, sliceH);
+        y += pageH;
+      }
+    }
+
+    const name = formData.name || 'ケアプロフィール';
+    const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    pdf.save(`ケアプロフィール_${name}_${date}.pdf`);
+    showToast('PDFを保存しました');
+  } catch (err) {
+    showToast('PDF生成に失敗しました');
+    console.error(err);
+  }
+}
+
+// ========== UTILITIES ==========
+function e(str) { // HTML escape
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escHtml(str) { return e(str); }
+function nl2br(str) {
+  if (!str) return '';
+  return e(str).replace(/\n/g,'<br>');
+}
+function calcAge(birthdate) {
+  const today = new Date();
+  const dob = new Date(birthdate);
+  let age = today.getFullYear() - dob.getFullYear();
+  const m = today.getMonth() - dob.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+  return age;
+}
+
+let toastTimer = null;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+
+</body>
+</html>
